@@ -14,4 +14,39 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: '17'
-          distribution: 'te
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: mvn compile
+
+  security-check:
+    runs-on: Self-hosted
+    needs: compile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies for Trivy
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install wget apt-transport-https gnupg lsb-release -y
+
+      - name: Install Trivy
+        run: |
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update -y
+          sudo apt-get install trivy -y
+
+      - name: Trivy File System Scan
+        run: trivy fs --format json -o fs-report.json .
+
+      - name: Install Gitleaks
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
+          chmod +x gitleaks
+          sudo mv gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+
+      - name: Gitleaks Code Scan
+        run: gitleaks detect --source . --report-path=gitleaks-report.json --report-format=json
