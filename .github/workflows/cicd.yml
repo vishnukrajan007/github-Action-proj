@@ -41,6 +41,7 @@ jobs:
       - name: Trivy File System Scan
         run: trivy fs --format json -o fs-report.json .
 
+
       - name: Install Gitleaks
         run: |
           curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
